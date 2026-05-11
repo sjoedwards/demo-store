@@ -1,8 +1,8 @@
 const orders: Array<{ id: string; sessionId: string | null; productId: string; qty: number }> = []
 
 export async function POST(req: Request) {
-  if (process.env.CHAOS_GUEST_ORDERS !== '1') {
-    return Response.json({ message: 'Guest orders chaos not enabled' }, { status: 400 })
+  if (process.env.FAULT_GUEST_ORDERS !== '1') {
+    return Response.json({ message: 'Guest orders fault not enabled' }, { status: 400 })
   }
   const { productId, qty } = await req.json()
   // BUG: no session required — creates order with null sessionId, unreconcilable

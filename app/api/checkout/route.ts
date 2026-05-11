@@ -11,10 +11,10 @@ export async function POST(req: Request) {
   }
 
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-  if (process.env.CHAOS_STRIPE_IDEMPOTENCY !== '1') {
+  if (process.env.FAULT_STRIPE_IDEMPOTENCY !== '1') {
     headers['Idempotency-Key'] = crypto.randomUUID()
   }
-  // BUG when CHAOS_STRIPE_IDEMPOTENCY=1: Idempotency-Key header is omitted
+  // BUG when FAULT_STRIPE_IDEMPOTENCY=1: Idempotency-Key header is omitted
 
   const payment = await fetch(`${process.env.API_URL}/api/mock-payment`, {
     method: 'POST', headers, body: JSON.stringify({ amount: total }),

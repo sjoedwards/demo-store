@@ -11,9 +11,9 @@ jobs:
       - name: Generate demo-store traffic
         env:
           STORE_URL: ${{ secrets.STORE_URL }}
-          BYPASS_TOKEN: ${{ secrets.VERCEL_BYPASS_TOKEN }}
+          E2E_TOKEN: ${{ secrets.E2E_TOKEN }}
         run: |
-          H="x-vercel-protection-bypass: $BYPASS_TOKEN"
+          H="Authorization: Bearer $E2E_TOKEN"
 
           # 1. Storefront
           curl -sf -H "$H" "$STORE_URL/" || true

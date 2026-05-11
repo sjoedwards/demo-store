@@ -1,0 +1,63 @@
+name: E2E Traffic
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  generate-traffic:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate demo-store traffic
+        env:
+          STORE_URL: ${{ secrets.STORE_URL }}
+          BYPASS_TOKEN: ${{ secrets.VERCEL_BYPASS_TOKEN }}
+        run: |
+          H="x-vercel-protection-bypass: $BYPASS_TOKEN"
+
+          # 1. Storefront
+          curl -sf -H "$H" "$STORE_URL/" || true
+
+          # 2. Products (timeout + rate limit errors)
+          curl -sf -H "$H" "$STORE_URL/api/products" || true
+
+          # 3. Auth race — fire twice with 50ms gap
+          curl -sf -H "$H" -X POST -H "Content-Type: application/json" \
+            -d '{"email":"test@example.com"}' "$STORE_URL/api/auth" &
+          sleep 0.05
+          curl -sf -H "$H" -X POST -H "Content-Type: application/json" \
+            -d '{"email":"test@example.com"}' "$STORE_URL/api/auth" || true
+          wait
+
+          # 4. Cart null dereference
+          curl -sf -H "$H" -X POST -H "Content-Type: application/json" \
+            -d '{"productId":"prod-001","qty":1}' "$STORE_URL/api/cart" || true
+
+          # 5. Search silent failure
+          curl -sf -H "$H" "$STORE_URL/api/search?q=test" || true
+
+          # 6. Orders FK violation (bad product ID — always fires)
+          curl -sf -H "$H" -X POST -H "Content-Type: application/json" \
+            -d '{"productId":"b4d-pr0duct-id-0000","qty":1}' "$STORE_URL/api/orders" || true
+
+          # 7. Edge env var missing (always fires)
+          curl -sf -H "$H" "$STORE_URL/api/edge" || true
+
+          # 8. Checkout — fire twice (idempotency + pricing regression)
+          curl -sf -H "$H" -X POST -H "Content-Type: application/json" \
+            -d '{"subtotalPence":101250,"items":[]}' "$STORE_URL/api/checkout" &
+          sleep 0.05
+          curl -sf -H "$H" -X POST -H "Content-Type: application/json" \
+            -d '{"subtotalPence":101250,"items":[]}' "$STORE_URL/api/checkout" || true
+          wait
+
+          # 9. Health check noise
+          curl -sf -H "$H" "$STORE_URL/api/health" || true
+
+          # 10. Price override
+          curl -sf -H "$H" -X POST -H "Content-Type: application/json" \
+            -d '{"subtotalPence":1,"productId":"prod-001"}' "$STORE_URL/api/checkout-price" || true
+
+          # 11. Guest orders
+          curl -sf -H "$H" -X POST -H "Content-Type: application/json" \
+            -d '{"productId":"prod-002","qty":1}' "$STORE_URL/api/guest-orders" || true

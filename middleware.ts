@@ -1,7 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// Routes callable from the browser UI — no auth required.
-const PUBLIC_API_ROUTES = [
+// Two separate auth layers:
+//
+// 1. BASIC AUTH (all routes including the storefront)
+//    Set BASIC_USER and BASIC_PASS in Vercel env vars.
+//    Browsers will show a native login prompt.
+//    Leave both empty in local dev to skip.
+//
+// 2. E2E_TOKEN (cron-only /api/* routes — skipped for UI routes)
+//    GitHub Actions cron passes: Authorization: Bearer <E2E_TOKEN>
+//    UI routes are excluded — they're covered by basic auth instead.
+
+const UI_API_ROUTES = [
   '/api/cart',
   '/api/auth',
   '/api/search',
@@ -9,35 +19,45 @@ const PUBLIC_API_ROUTES = [
   '/api/products',
 ]
 
-// All other /api/* routes are cron-only — protected by E2E_TOKEN bearer auth.
-// Set E2E_TOKEN in Vercel env vars + GitHub secret E2E_TOKEN.
+function unauthorizedBasic() {
+  return new NextResponse('Unauthorized', {
+    status: 401,
+    headers: { 'WWW-Authenticate': 'Basic realm="Demo Store", charset="UTF-8"' },
+  })
+}
 
 export function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname
+  const basicUser = process.env.BASIC_USER
+  const basicPass = process.env.BASIC_PASS
 
-  if (!path.startsWith('/api')) return NextResponse.next()
+  // --- Layer 1: Basic auth on all routes ---
+  if (basicUser && basicPass) {
+    const auth = req.headers.get('authorization') ?? ''
+    if (!auth.startsWith('Basic ')) return unauthorizedBasic()
 
-  // Public UI routes — allow through
-  if (PUBLIC_API_ROUTES.some(r => path.startsWith(r))) {
-    return NextResponse.next()
+    const decoded = Buffer.from(auth.slice(6), 'base64').toString('utf-8')
+    const [user, ...rest] = decoded.split(':')
+    const pass = rest.join(':')
+
+    if (user !== basicUser || pass !== basicPass) return unauthorizedBasic()
   }
 
-  const token = process.env.E2E_TOKEN
-  if (!token) {
-    // No token configured — allow through (local dev)
-    return NextResponse.next()
-  }
-
-  const auth = req.headers.get('authorization') ?? ''
-  const provided = auth.startsWith('Bearer ') ? auth.slice(7) : ''
-
-  if (provided !== token) {
-    return new NextResponse('Unauthorized', { status: 401 })
+  // --- Layer 2: Bearer token on cron-only API routes ---
+  if (path.startsWith('/api') && !UI_API_ROUTES.some(r => path.startsWith(r))) {
+    const e2eToken = process.env.E2E_TOKEN
+    if (e2eToken) {
+      const auth = req.headers.get('authorization') ?? ''
+      const provided = auth.startsWith('Bearer ') ? auth.slice(7) : ''
+      if (provided !== e2eToken) {
+        return new NextResponse('Unauthorized', { status: 401 })
+      }
+    }
   }
 
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: '/api/:path*',
+  matcher: '/:path*',
 }

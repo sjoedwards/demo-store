@@ -1,4 +1,5 @@
 import { applyDiscount } from '@/lib/pricing'
+import { apiFetch } from '@/lib/api-fetch'
 
 export async function POST(req: Request) {
   const { subtotalPence, items } = await req.json()
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
   }
   // BUG when FAULT_STRIPE_IDEMPOTENCY=1: Idempotency-Key header is omitted
 
-  const payment = await fetch(`${process.env.API_URL}/api/mock-payment`, {
+  const payment = await apiFetch('/api/mock-payment', {
     method: 'POST', headers, body: JSON.stringify({ amount: total }),
   })
   if (!payment.ok) throw new Error((await payment.json()).error)

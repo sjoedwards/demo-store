@@ -12,16 +12,21 @@
  *   npm run generate-errors
  *
  * Environment variables (all optional — defaults target production):
- *   STORE_URL    Base URL of the store  (default: https://demo-store-lilac.vercel.app)
- *   BASIC_USER   Basic Auth username
- *   BASIC_PASS   Basic Auth password
+ *   STORE_URL    Base URL of the store  (default: https://demo-store.playground-vercel.tools)
+ *   BYPASS_KEY   Vercel protection bypass key
  *   E2E_TOKEN    Token for internal API routes
  */
 
 import { expect, test } from '@playwright/test'
 
 const E2E_TOKEN = process.env.E2E_TOKEN ?? 'efa7efn!qwj-MPR!kwc'
-const cronHeaders = { 'x-e2e-token': E2E_TOKEN }
+const BYPASS_KEY = process.env.BYPASS_KEY ?? 'u2KmxEBO4IN1VDGp2UeifOI02jPUCoDQ'
+
+// Headers for cron-only routes (layer 2 auth + bypass)
+const cronHeaders = {
+  'x-e2e-token': E2E_TOKEN,
+  'x-vercel-protection-bypass': BYPASS_KEY,
+}
 
 function logResult(label: string, status: number, body: string) {
   const truncated = body.length > 120 ? body.slice(0, 120) + '…' : body
@@ -30,7 +35,10 @@ function logResult(label: string, status: number, body: string) {
 
 test.describe('Store traffic', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
+    // The bypass key must be passed as a query param on the first request so Vercel
+    // can set the bypass cookie before any SSO redirect fires.
+    const base = process.env.STORE_URL ?? 'https://demo-store.playground-vercel.tools'
+    await page.goto(`${base}/?x-vercel-protection-bypass=${BYPASS_KEY}`)
     await expect(page.getByRole('heading', { name: 'Demo Store' })).toBeVisible()
   })
 
@@ -137,14 +145,19 @@ test.describe('Store traffic', () => {
   })
 
   test('Product listing', async ({ page }) => {
-    const results = await page.evaluate(async () => {
-      const out = []
-      for (let i = 1; i <= 3; i++) {
-        const res = await fetch('/api/products')
-        out.push({ call: i, status: res.status })
-      }
-      return out
-    })
+    const results = await page.evaluate(
+      async ({ bypassKey }) => {
+        const out = []
+        for (let i = 1; i <= 3; i++) {
+          const res = await fetch('/api/products', {
+            headers: { 'x-vercel-protection-bypass': bypassKey },
+          })
+          out.push({ call: i, status: res.status })
+        }
+        return out
+      },
+      { bypassKey: BYPASS_KEY },
+    )
     for (const r of results) {
       logResult(`products (call ${r.call})`, r.status, '')
     }

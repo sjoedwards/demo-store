@@ -7,6 +7,8 @@
     "generate-errors:headed": "playwright test generate-errors.spec.ts --headed"
   },
   "devDependencies": {
-    "@playwright/test": "^1.44.0"
+    "@playwright/test": "^1.44.0",
+    "@types/node": "^25.8.0",
+    "typescript": "^6.0.3"
   }
 }

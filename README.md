@@ -43,11 +43,11 @@ demo-store-api  (upstream — chaos flags live here)
 
 | # | Error | Env flag | Route | File |
 |---|---|---|---|---|
-| 1 | Stripe idempotency missing — `Idempotency-Key` header omitted | `FAULT_STRIPE_IDEMPOTENCY` (this repo) | `POST /api/checkout` | `app/api/checkout/route.ts:15` |
-| 3 | Auth race condition — 60ms sleep between session check and write | `FAULT_AUTH_RACE` (this repo) | `POST /api/auth` | `app/api/auth/route.ts:7` |
+| 1 | Stripe idempotency missing — `Idempotency-Key` header omitted | `FAULT_STRIPE_IDEMPOTENCY` (**demo-store-api**) | `POST /api/checkout` | `app/api/checkout/route.ts:15` |
+| 3 | Auth race condition — 60ms sleep between session check and write | `FAULT_AUTH_RACE` (**demo-store-api**) | `POST /api/auth` | `app/api/auth/route.ts:7` |
 | 6 | Health check noise — upstream 500 logged with no context | `FAULT_HEALTH` (**demo-store-api**) | `GET /api/health` | `app/api/health/route.ts:6` |
 | 7 | Silent search failure — stack swallowed, root cause invisible | `FAULT_SEARCH_SILENT` (**demo-store-api**) | `GET /api/search` | `app/api/search/route.ts:12` |
-| 8 | Cart null dereference — `cart!.items` crashes without session token | `FAULT_CART_NULL` (this repo) | `POST /api/cart` | `app/api/cart/route.ts:9` |
+| 8 | Cart null dereference — `cart!.items` crashes when API returns null cart | `FAULT_CART_NULL` (**demo-store-api**) | `POST /api/cart` | `app/api/cart/route.ts:13` |
 | 9 | Checkout price override — trusts client-supplied `subtotalPence` | `FAULT_PRICE_OVERRIDE` (this repo) | `POST /api/checkout-price` | `app/api/checkout-price/route.ts:6` |
 | 10 | Orphaned guest orders — order created with `sessionId: null` | `FAULT_GUEST_ORDERS` (this repo) | `POST /api/guest-orders` | `app/api/guest-orders/route.ts:11` |
 | 11 | Upstream products timeout — no `AbortSignal.timeout()`, upstream delays 12s | `FAULT_UPSTREAM_TIMEOUT` (**demo-store-api**) | `GET /api/products` | `app/api/products/route.ts:6` |
@@ -131,8 +131,5 @@ See `.env.example` for the full list. Key vars:
 | `BASIC_USER` / `BASIC_PASS` | Basic Auth credentials (leave empty in local dev) |
 | `API_SECRET` | Bearer token for calls **to** demo-store-api |
 | `E2E_TOKEN` | Bearer token protecting cron-only routes **on** this app |
-| `FAULT_STRIPE_IDEMPOTENCY` | Enable error #1 |
-| `FAULT_AUTH_RACE` | Enable error #3 |
-| `FAULT_CART_NULL` | Enable error #8 |
 | `FAULT_PRICE_OVERRIDE` | Enable error #9 |
 | `FAULT_GUEST_ORDERS` | Enable error #10 |

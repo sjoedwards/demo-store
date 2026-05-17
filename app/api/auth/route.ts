@@ -1,13 +1,14 @@
-const sessions = new Map<string, string>()
+import { apiFetch } from '@/lib/api-fetch'
 
 export async function POST(req: Request) {
   const { email } = await req.json()
-  const token = crypto.randomUUID()
 
-  const exists = sessions.has(token)
-  await new Promise(r => setTimeout(r, 60))
-  if (exists) throw new Error(`Session already exists for token ${token}`)
+  const res = await apiFetch('/api/sessions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  })
 
-  sessions.set(token, email)
+  const { token } = await res.json()
   return Response.json({ token })
 }

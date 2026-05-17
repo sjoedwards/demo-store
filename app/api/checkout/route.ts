@@ -11,7 +11,7 @@ export async function POST(req: Request) {
 
   const payment = await apiFetch('/api/mock-payment', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
     body: JSON.stringify({ amount: total }),
   })
   if (!payment.ok) throw new Error((await payment.json()).error)

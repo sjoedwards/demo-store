@@ -5,13 +5,7 @@ export async function POST(req: Request) {
   const token = req.headers.get('x-session-token') ?? ''
   const cart = carts.get(token)
 
-  if (process.env.FAULT_CART_NULL === '1') {
-    cart!.items.push({ productId, qty }) // BUG: cart is undefined when token missing
-  } else {
-    const safe = cart ?? { items: [] }
-    safe.items.push({ productId, qty })
-    carts.set(token, safe)
-  }
+  cart!.items.push({ productId, qty })
 
   return Response.json({ success: true })
 }

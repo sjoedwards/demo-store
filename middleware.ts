@@ -44,11 +44,16 @@ export function middleware(req: NextRequest) {
   }
 
   // --- Layer 2: Bearer token on cron-only API routes ---
+  // Accepts either Authorization: Bearer <token> OR x-e2e-token: <token>
+  // The x-e2e-token header allows browser-context fetches that already satisfy
+  // layer 1 via Basic Auth (which occupies the Authorization header).
   if (path.startsWith('/api') && !UI_API_ROUTES.some(r => path.startsWith(r))) {
     const e2eToken = process.env.E2E_TOKEN
     if (e2eToken) {
       const auth = req.headers.get('authorization') ?? ''
-      const provided = auth.startsWith('Bearer ') ? auth.slice(7) : ''
+      const bearerProvided = auth.startsWith('Bearer ') ? auth.slice(7) : ''
+      const headerProvided = req.headers.get('x-e2e-token') ?? ''
+      const provided = bearerProvided || headerProvided
       if (provided !== e2eToken) {
         return new NextResponse('Unauthorized', { status: 401 })
       }

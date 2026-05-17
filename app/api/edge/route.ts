@@ -1,7 +1,7 @@
 export const runtime = 'edge'
 
 export async function GET() {
-  const config = process.env.MISSING_EDGE_CONFIG
-  if (!config) throw new Error('Required environment variable MISSING_EDGE_CONFIG is not defined.')
-  return Response.json({ config })
+  const secret = process.env.REVALIDATION_SECRET
+  if (!secret) throw new Error('REVALIDATION_SECRET is not set')
+  return Response.json({ ok: true })
 }

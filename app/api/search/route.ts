@@ -9,7 +9,6 @@ export async function GET(req: Request) {
     if (!res.ok) throw new Error(`Search API error: ${res.status}`)
     return Response.json(await res.json())
   } catch (e) {
-    // BUG: stack swallowed — root cause invisible
     console.error('Search failed.')
     return Response.json({ results: [] }, { status: 500 })
   }

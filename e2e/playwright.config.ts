@@ -1,11 +1,16 @@
 import { defineConfig } from '@playwright/test'
 
+// This script is for local use only — it generates traffic against the live store.
+// It is intentionally not wired into CI.
+if (process.env.CI) {
+  throw new Error('generate-errors.spec.ts is a local traffic generator and must not run in CI.')
+}
+
 export default defineConfig({
   testDir: '.',
-  timeout: 60_000, // /api/products can take up to 12s (upstream timeout fault)
+  timeout: 60_000,
   use: {
     baseURL: process.env.STORE_URL ?? 'https://demo-store-lilac.vercel.app',
-    // Basic Auth credentials — set BASIC_USER / BASIC_PASS or rely on .env.local defaults
     httpCredentials: {
       username: process.env.BASIC_USER ?? 'sjoedwards',
       password: process.env.BASIC_PASS ?? 'ubq5PTK@mxb9day8hpe',

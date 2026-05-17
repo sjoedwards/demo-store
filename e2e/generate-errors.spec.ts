@@ -35,10 +35,7 @@ function logResult(label: string, status: number, body: string) {
 
 test.describe('Store traffic', () => {
   test.beforeEach(async ({ page }) => {
-    // The bypass key must be passed as a query param on the first request so Vercel
-    // can set the bypass cookie before any SSO redirect fires.
-    const base = process.env.STORE_URL ?? 'https://demo-store.playground-vercel.tools'
-    await page.goto(`${base}/?x-vercel-protection-bypass=${BYPASS_KEY}`)
+    await page.goto('/')
     await expect(page.getByRole('heading', { name: 'Demo Store' })).toBeVisible()
   })
 

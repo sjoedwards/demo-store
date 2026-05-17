@@ -11,10 +11,6 @@ export default defineConfig({
   timeout: 60_000,
   use: {
     baseURL: process.env.STORE_URL ?? 'https://demo-store.playground-vercel.tools',
-    httpCredentials: {
-      username: process.env.BASIC_USER ?? 'sjoedwards',
-      password: process.env.BASIC_PASS ?? 'ubq5PTK@mxb9day8hpe',
-    },
     extraHTTPHeaders: {
       'x-vercel-protection-bypass': process.env.BYPASS_KEY ?? 'u2KmxEBO4IN1VDGp2UeifOI02jPUCoDQ',
     },

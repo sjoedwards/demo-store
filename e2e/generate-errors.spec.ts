@@ -70,19 +70,28 @@ test.describe('Store traffic', () => {
   })
 
   test('Submit order', async ({ page }) => {
-    const result = await page.evaluate(
+    const results = await page.evaluate(
       async ({ headers }) => {
-        const res = await fetch('/api/orders', {
+        const stale = await fetch('/api/orders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...headers },
           body: JSON.stringify({ productId: 'prod-3f4a1c', qty: 1 }),
         })
-        return { status: res.status, body: await res.text() }
+        const valid = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...headers },
+          body: JSON.stringify({ productId: 'prod-001', qty: 1 }),
+        })
+        return [
+          { label: 'orders (stale id)', status: stale.status, body: await stale.text() },
+          { label: 'orders (valid id)', status: valid.status, body: await valid.text() },
+        ]
       },
       { headers: cronHeaders },
     )
-    logResult('orders', result.status, result.body)
-    expect(result.status).toBe(500)
+    for (const r of results) logResult(r.label, r.status, r.body)
+    expect(results[0].status).toBe(500)
+    expect(results[1].status).toBe(500)
   })
 
   test('Edge config check', async ({ page }) => {

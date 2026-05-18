@@ -37,7 +37,7 @@ demo-store-api  (upstream — chaos flags live here)
 |---|---|---|---|
 | 2 | Pricing regression — `applyDiscount()` subtracts wrong way, negative total | `POST /api/checkout` | `lib/pricing.ts:7` |
 | 4 | Order FK violation — references deleted `productId` | `POST /api/orders` | `app/api/orders/route.ts:11` |
-| 5 | Missing edge env var — `MISSING_EDGE_CONFIG` never set | `GET /api/edge` | `app/api/edge/route.ts:5` |
+| 5 | Missing edge env var — `REVALIDATION_SECRET` never set | `GET /api/edge` | `app/api/edge/route.ts:5` |
 
 ### Flag-gated (set env var to `1` to enable)
 

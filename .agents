@@ -43,7 +43,7 @@ e2e/
 | 2 | lib/pricing.ts | 5 | discount - subtotalPence instead of subtotalPence - discount (always-on) | Yes | — |
 | 3 | app/api/auth/route.ts | 7 | 60ms sleep between session check and write (race window, always-on) | Yes | — |
 | 4 | app/api/orders/route.ts | 11 | e2e traffic sends stale productId "prod-3f4a1c" which no longer exists in the map | Yes | — |
-| 5 | app/api/edge/route.ts | 4 | Reads REVALIDATION_SECRET which is never set | Yes | — |
+| 5 | app/api/edge/route.ts | 4 | Reads REVALIDATION_SECRET which is deliberately never set — always throws with "REVALIDATION_SECRET is not set" | Yes | — |
 | 6 | app/api/health/route.ts | 5 | Discards upstream error body, logs nothing useful | No | FAULT_HEALTH (on demo-store-api) |
 | 7 | app/api/search/route.ts | 12 | catch block swallows stack, returns empty results | No | FAULT_SEARCH_SILENT (on demo-store-api) |
 | 8 | app/api/cart/route.ts | 8 | cart!.items non-null assertion crashes when cart is undefined (always-on) | Yes | — |

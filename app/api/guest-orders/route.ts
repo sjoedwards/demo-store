@@ -1,8 +1,14 @@
-const orders: Array<{ id: string; sessionId: string | null; productId: string; qty: number }> = []
+import { apiFetch } from '@/lib/api-fetch'
 
 export async function POST(req: Request) {
   const { productId, qty } = await req.json()
-  const order = { id: crypto.randomUUID(), sessionId: null, productId, qty }
-  orders.push(order)
-  throw new Error(`Failed to complete order ${order.id}`)
+
+  const res = await apiFetch('/api/guest-orders', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ productId, qty }),
+  })
+
+  if (!res.ok) throw new Error((await res.json()).error)
+  return Response.json(await res.json())
 }

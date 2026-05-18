@@ -49,7 +49,7 @@ demo-store-api  (upstream — chaos flags live here)
 | 7 | Silent search failure — stack swallowed, root cause invisible | `FAULT_SEARCH_SILENT` (**demo-store-api**) | `GET /api/search` | `app/api/search/route.ts:12` |
 | 8 | Cart null dereference — `cart!.items` crashes when API returns null cart | `FAULT_CART_NULL` (**demo-store-api**) | `POST /api/cart` | `app/api/cart/route.ts:13` |
 | 9 | Checkout price override — trusts client-supplied `subtotalPence` | `FAULT_PRICE_OVERRIDE` (this repo) | `POST /api/checkout-price` | `app/api/checkout-price/route.ts:6` |
-| 10 | Orphaned guest orders — order created with `sessionId: null` | `FAULT_GUEST_ORDERS` (this repo) | `POST /api/guest-orders` | `app/api/guest-orders/route.ts:11` |
+| 10 | Orphaned guest orders — order created with `sessionId: null` | `FAULT_GUEST_ORDERS` (**demo-store-api**) | `POST /api/guest-orders` | `app/api/guest-orders/route.ts:11` |
 | 11 | Upstream products timeout — no `AbortSignal.timeout()`, upstream delays 12s | `FAULT_UPSTREAM_TIMEOUT` (**demo-store-api**) | `GET /api/products` | `app/api/products/route.ts:6` |
 | 12 | Rate limit cascade — no retry on 429 from upstream | `FAULT_UPSTREAM_RATE_LIMIT` (**demo-store-api**) | `GET /api/products` | `app/api/products/route.ts:7` |
 | 13 | N+1 enrichment — per-product call to `/api/products/:id` which doesn't exist, 4 upstream 404s per page load | — (always-on) | `GET /api/products` | `app/api/products/route.ts:11` |
@@ -133,4 +133,3 @@ See `.env.example` for the full list. Key vars:
 | `API_SECRET` | Bearer token for calls **to** demo-store-api |
 | `E2E_TOKEN` | Bearer token protecting cron-only routes **on** this app |
 | `FAULT_PRICE_OVERRIDE` | Enable error #9 |
-| `FAULT_GUEST_ORDERS` | Enable error #10 |

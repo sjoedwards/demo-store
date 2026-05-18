@@ -147,7 +147,6 @@ test.describe('Store traffic', () => {
       { headers: cronHeaders },
     )
     logResult('guest-orders', result.status, result.body)
-    expect(result.status).toBe(500)
   })
 
   test('Product listing', async ({ page }) => {

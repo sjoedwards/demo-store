@@ -1,57 +1,32 @@
 # demo-store — agent context
 
-This is a deliberately broken Next.js storefront. Its purpose is to generate realistic error
-traffic for the agentic-triage-demo project. Read this file before making any changes.
-
-## What this repo is
-
-- A Next.js App Router storefront that calls `demo-store-api` as its upstream service
-- Bugs are INTENTIONAL — do not fix them unless explicitly asked
-- The agentic-triage agent investigates errors in THIS repo's code; it cannot see demo-store-api internals
+This is a Next.js storefront. It delegates all business logic to `demo-store-api`.
+Read this file before making any changes.
 
 ## Repo layout
 
 ```
 app/
-  (shop)/page.tsx          # Storefront UI — Add to cart, Search, Checkout, Sign in
+  (shop)/page.tsx          # Storefront UI
   api/
-    auth/route.ts          # POST — session creation (auth race bug)
-    cart/route.ts          # POST — add to cart (null dereference bug)
-    checkout/route.ts      # POST — checkout (pricing regression + idempotency bug)
-    checkout-price/route.ts# POST — price lookup (price override bug)
-    edge/route.ts          # GET  — edge function (missing env var bug, Edge runtime)
-    guest-orders/route.ts  # POST — guest order (orphaned session bug)
-    health/route.ts        # GET  — health check (noise/no-context bug)
-    orders/route.ts        # POST — create order (FK violation bug)
-    products/route.ts      # GET  — product list (timeout + rate limit bugs)
-    search/route.ts        # GET  — search (silent failure bug)
+    auth/route.ts          # POST — delegates to demo-store-api /api/sessions
+    cart/route.ts          # POST — delegates to demo-store-api /api/cart
+    checkout/route.ts      # POST — delegates to demo-store-api /api/discount + /api/mock-payment
+    checkout-price/route.ts# POST — delegates to demo-store-api /api/checkout-price
+    edge/route.ts          # GET  — delegates to demo-store-api /api/config (Edge runtime)
+    guest-orders/route.ts  # POST — delegates to demo-store-api /api/guest-orders
+    health/route.ts        # GET  — delegates to demo-store-api /api/ping
+    orders/route.ts        # POST — delegates to demo-store-api /api/orders
+    products/route.ts      # GET  — delegates to demo-store-api /api/products
+    search/route.ts        # GET  — delegates to demo-store-api /api/search
 lib/
-  apiFetch.ts              # Shared fetch helper for calls to demo-store-api
-  pricing.ts               # applyDiscount() — contains the pricing regression bug
+  api-fetch.ts             # Shared fetch helper for calls to demo-store-api
 middleware.ts              # Two-layer auth: Basic Auth (all routes) + Bearer/x-e2e-token (cron routes)
 e2e/
-  generate-errors.spec.ts  # Playwright script that triggers all 12 errors
+  generate-errors.spec.ts  # Playwright script that triggers traffic across all routes
   playwright.config.ts
   package.json
 ```
-
-## The 12 errors
-
-| # | File | Line | Bug | Always-on? | Env flag |
-|---|---|---|---|---|---|
-| 1 | app/api/checkout/route.ts | 12 | Idempotency-Key header never sent to payment API (always-on) | Yes | — |
-| 2 | lib/pricing.ts | 5 | discount - subtotalPence instead of subtotalPence - discount (always-on) | Yes | — |
-| 3 | app/api/auth/route.ts | 7 | 60ms sleep between session check and write (race window, always-on) | Yes | — |
-| 4 | app/api/orders/route.ts | 11 | e2e traffic sends stale productId "prod-3f4a1c" which no longer exists in the map | Yes | — |
-| 5 | app/api/edge/route.ts | 4 | Reads REVALIDATION_SECRET which is deliberately never set — always throws with "REVALIDATION_SECRET is not set" | Yes | — |
-| 6 | app/api/health/route.ts | 5 | Discards upstream error body, logs nothing useful | No | FAULT_HEALTH (on demo-store-api) |
-| 7 | app/api/search/route.ts | 12 | catch block swallows stack, returns empty results | No | FAULT_SEARCH_SILENT (on demo-store-api) |
-| 8 | app/api/cart/route.ts | 8 | cart!.items non-null assertion crashes when cart is undefined (always-on) | Yes | — |
-| 9 | app/api/checkout-price/route.ts | 3 | Delegates to API which trusts client-supplied subtotalPence when flag set | No | FAULT_PRICE_OVERRIDE (on demo-store-api) |
-| 10 | app/api/guest-orders/route.ts | 4 | Delegates to API which creates order with sessionId: null then returns 500 | No | FAULT_GUEST_ORDERS (on demo-store-api) |
-| 11 | app/api/products/route.ts | 6 | No AbortSignal.timeout() — platform 504 when upstream delays 12s | No | FAULT_UPSTREAM_TIMEOUT (on demo-store-api) |
-| 12 | app/api/products/route.ts | 7 | No 429 handling or retry — crashes on upstream rate limit | No | FAULT_UPSTREAM_RATE_LIMIT (on demo-store-api) |
-| 13 | app/api/products/route.ts | 11 | N+1: fires a per-product enrichment call to /api/products/:id which does not exist — 4 upstream 404s per request | Yes | — |
 
 ## Auth model
 
@@ -70,26 +45,9 @@ middleware.ts enforces two layers on every request:
 The x-e2e-token header exists so browser-context fetches (which need Authorization for Basic Auth)
 can still reach cron-only routes without header conflicts.
 
-## Generating errors
-
-  Via UI buttons:
-    Checkout x2 (50ms gap)  → errors #1, #2
-    Sign in x2 (50ms gap)   → error #3
-    Add to cart             → error #8
-    Search form submit      → error #7
-
-  Via Playwright (triggers all 12):
-    cd e2e && npm install && npx playwright install chromium && npm run generate-errors
-
-  Via GitHub Actions cron (hourly):
-    .github/workflows/e2e.yml — requires STORE_URL and E2E_TOKEN secrets
-
 ## Rules for agents working in this repo
 
-1. Do NOT fix the intentional bugs in the error catalogue above.
-2. Do NOT remove or weaken the FAULT_* env var checks — they are the on/off switch for each error.
+1. All business logic lives in demo-store-api — do not add logic directly to route handlers here.
+2. Route handlers in this repo should only call apiFetch and surface the response.
 3. Middleware changes must preserve both auth layers and the x-e2e-token escape hatch.
 4. The e2e/ directory is standalone (its own package.json) — do not add Playwright to the root package.json.
-5. lib/pricing.ts:7 contains the intentional regression — do not "fix" the arithmetic.
-6. When adding new intentional errors, follow the same pattern: FAULT_ env var guard, comment
-   marking the bug, and a corresponding entry in the e2e Playwright spec.

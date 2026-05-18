@@ -29,7 +29,7 @@ demo-store-api  (upstream — chaos flags live here)
 
 ## Error catalogue
 
-12 deliberately injected errors across two categories:
+13 deliberately injected errors across two categories:
 
 ### Always-on (no env flag needed)
 
@@ -52,6 +52,7 @@ demo-store-api  (upstream — chaos flags live here)
 | 10 | Orphaned guest orders — order created with `sessionId: null` | `FAULT_GUEST_ORDERS` (this repo) | `POST /api/guest-orders` | `app/api/guest-orders/route.ts:11` |
 | 11 | Upstream products timeout — no `AbortSignal.timeout()`, upstream delays 12s | `FAULT_UPSTREAM_TIMEOUT` (**demo-store-api**) | `GET /api/products` | `app/api/products/route.ts:6` |
 | 12 | Rate limit cascade — no retry on 429 from upstream | `FAULT_UPSTREAM_RATE_LIMIT` (**demo-store-api**) | `GET /api/products` | `app/api/products/route.ts:7` |
+| 13 | N+1 enrichment — per-product call to `/api/products/:id` which doesn't exist, 4 upstream 404s per page load | — (always-on) | `GET /api/products` | `app/api/products/route.ts:11` |
 
 ---
 

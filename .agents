@@ -51,6 +51,7 @@ e2e/
 | 10 | app/api/guest-orders/route.ts | 4 | Creates order with sessionId: null then throws (always-on) | Yes | — |
 | 11 | app/api/products/route.ts | 6 | No AbortSignal.timeout() — platform 504 when upstream delays 12s | No | FAULT_UPSTREAM_TIMEOUT (on demo-store-api) |
 | 12 | app/api/products/route.ts | 7 | No 429 handling or retry — crashes on upstream rate limit | No | FAULT_UPSTREAM_RATE_LIMIT (on demo-store-api) |
+| 13 | app/api/products/route.ts | 11 | N+1: fires a per-product enrichment call to /api/products/:id which does not exist — 4 upstream 404s per request | Yes | — |
 
 ## Auth model
 

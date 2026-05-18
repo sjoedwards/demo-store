@@ -47,7 +47,7 @@ e2e/
 | 6 | app/api/health/route.ts | 5 | Discards upstream error body, logs nothing useful | No | FAULT_HEALTH (on demo-store-api) |
 | 7 | app/api/search/route.ts | 12 | catch block swallows stack, returns empty results | No | FAULT_SEARCH_SILENT (on demo-store-api) |
 | 8 | app/api/cart/route.ts | 8 | cart!.items non-null assertion crashes when cart is undefined (always-on) | Yes | — |
-| 9 | app/api/checkout-price/route.ts | 3 | Trusts client-supplied subtotalPence, no server-side lookup (always-on) | Yes | — |
+| 9 | app/api/checkout-price/route.ts | 3 | Delegates to API which trusts client-supplied subtotalPence when flag set | No | FAULT_PRICE_OVERRIDE (on demo-store-api) |
 | 10 | app/api/guest-orders/route.ts | 4 | Delegates to API which creates order with sessionId: null then returns 500 | No | FAULT_GUEST_ORDERS (on demo-store-api) |
 | 11 | app/api/products/route.ts | 6 | No AbortSignal.timeout() — platform 504 when upstream delays 12s | No | FAULT_UPSTREAM_TIMEOUT (on demo-store-api) |
 | 12 | app/api/products/route.ts | 7 | No 429 handling or retry — crashes on upstream rate limit | No | FAULT_UPSTREAM_RATE_LIMIT (on demo-store-api) |
